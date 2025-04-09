@@ -259,6 +259,9 @@ function updateCar(deltaTime) {
   const currentTurnSpeed = turnSpeed * deltaTime;
   const currentMoveSpeed = carSpeed * deltaTime;
 
+  // Store position before movement for collision detection
+  const previousPosition = car.position.clone();
+
   // --- Determine Input ---
   let forwardInput = 0;
   let turnInput = 0;
@@ -293,7 +296,25 @@ function updateCar(deltaTime) {
     car.translateZ(currentMoveSpeed * forwardInput);
   }
 
+  // --- Collision Detection ---
+  const carBoundingBox = new THREE.Box3().setFromObject(car);
+  let collisionDetected = false;
+  for (const obstacle of obstacles) {
+    const obstacleBoundingBox = new THREE.Box3().setFromObject(obstacle);
+    if (carBoundingBox.intersectsBox(obstacleBoundingBox)) {
+      collisionDetected = true;
+      break; // Stop checking after the first collision
+    }
+  }
+
+  // If collision, revert position
+  if (collisionDetected) {
+    car.position.copy(previousPosition);
+    // Optionally, stop momentum or add other effects here
+  }
+
   // --- Boundary Checks ---
+  // Apply boundary checks *after* collision checks
   car.position.x = THREE.MathUtils.clamp(car.position.x, -boundary, boundary);
   car.position.z = THREE.MathUtils.clamp(car.position.z, -boundary, boundary);
 
